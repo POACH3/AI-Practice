@@ -9,7 +9,7 @@ Matrix and vector dimensions are as follow:
     N_test: number of test samples
 
 NOTES:
-
+    remove iris dataset assumption from split_data()
 """
 
 import numpy as np
@@ -21,8 +21,11 @@ def load_data(filepath):
     """
     Loads data into a pandas dataframe.
 
-    :param filepath:
-    :return dataframe:
+    Args:
+        filepath (string): Path to the CSV of the dataset.
+
+    Returns:
+        dataframe: Imported dataset
     """
     return pd.read_csv(filepath)
 
@@ -32,9 +35,15 @@ def split_data(dataframe, percent_train=80):
     Creates a training and testing split of the dataset. Expects the
     rows of the dataset to be samples and the columns to be features.
 
-    :param dataframe:
-    :param percent_train:
-    :return:
+    Args:
+        dataframe: Complete dataset.
+        percent_train: Percentage of the dataset to use to train.
+
+    Returns:
+        X_train_df (dataframe): Training data.
+        y_train_df (dataframe): Training labels (one-hot encoded).
+        X_test_df (dataframe): Test data.
+        y_test_df (dataframe): Test labels (one-hot encoded).
     """
     df_shuffled = dataframe.sample(frac=1, random_state=42)
     num_samples, num_features = df_shuffled.shape
@@ -57,24 +66,33 @@ def split_data(dataframe, percent_train=80):
 
 def standardize_dataset(X_train_df, X_test_df):
     """
-    Standardize the dataset.
+    Standardizes the dataset that has been split into training and test sets.
 
-    :param X_train_df:
-    :param X_test_df:
-    :return:
+    Args:
+        X_train_df (dataframe): Training dataset.
+        X_test_df (dataframe): Test dataset.
+
+    Returns:
+        X_train_standardized (dataframe): Standardized training dataset.
+        X_test_standardized (dataframe): Standardized test dataset.
     """
     X_train_standardized = (X_train_df - X_train_df.mean()) / X_train_df.std() # shape (N_train, D)
     X_test_standardized = (X_test_df - X_train_df.mean()) / X_train_df.std()   # shape (N_test, D)
 
     return X_train_standardized, X_test_standardized
 
+
 def initialize_parameters(num_features, num_classes):
     """
     Initializes the parameters (weights and biases) of the model.
 
-    :param num_features:
-    :param num_classes:
-    :return:
+    Args:
+        num_features (int): Number of features in the dataset.
+        num_classes (int): Number of classes in the dataset.
+
+    Returns:
+        weight_matrix (numpy.ndarray): Weights of the model.
+        bias_vector (numpy.ndarray): Biases of the model.
     """
     np.random.seed(42)
 
@@ -89,10 +107,13 @@ def forward_pass(W, b, X):
     Given samples, predicts a class. Computes logits and outputs
     probabilities for the provided data.
 
-    :param W:
-    :param b:
-    :param X:
-    :return:
+    Args:
+        W: The weights of the model.
+        b: The biases of the model.
+        X: The samples.
+
+    Returns:
+        Y_hat: The predicted class probabilities.
     """
     Z = X @ W + b # raw logits, shape (N_train,C)
 
@@ -109,20 +130,33 @@ def cross_entropy_loss(Y_true, Y_hat):
     """
     Computes the average cross entropy loss per sample. Expects one-hot encoding.
 
-    :param Y_hat:
-    :param Y_true:
-    :return:
+    Args:
+        Y_true (numpy.ndarray): True labels (One-hot encoded).
+        Y_hat (numpy.ndarray): Predicted labels (One-hot encoded).
+
+    Returns:
+        loss: The average cross entropy loss.
     """
     N, _ = Y_hat.shape
-    #return -np.sum(np.log(Y_hat[np.arange(N), y_train])) / N # class labels
-    return -np.sum(Y_true * np.log(Y_hat)) / N               # one-hot
+
+    #loss = -np.sum(np.log(Y_hat[np.arange(N), y_train])) / N # class labels
+    loss = -np.sum(Y_true * np.log(Y_hat)) / N               # one-hot
+
+    return loss
 
 
 def backward_propagation(X, Y_true, Y_hat):
     """
-    Back propagation.
+    Calculates gradients using back propagation.
 
-    :return:
+    Args:
+        X: The samples.
+        Y_true (numpy.ndarray): True labels (One-hot encoded).
+        Y_hat (numpy.ndarray): Predicted labels (One-hot encoded).
+
+    Returns:
+        dLoss_dW: The gradient of the loss with respect to weights.
+        dLoss_db: The gradient of the loss with respect to biases.
     """
     N_test, _ = Y_true.shape
 
@@ -139,11 +173,15 @@ def update(W, b, dW, db):
     """
     Uses gradient descent to update weights and biases.
 
-    :param W:
-    :param b:
-    :param dW:
-    :param db:
-    :return:
+    Args:
+        W: The weights of the model.
+        b: The biases of the model.
+        dW: The gradient of the loss with respect to weights.
+        db: The gradient of the loss with respect to biases.
+
+    Returns:
+        W: The updated weights.
+        b: The updated biases.
     """
     alpha = .1 # learning rate
 
@@ -154,6 +192,22 @@ def update(W, b, dW, db):
 
 
 def train_model(W, b, X_train, Y_train, X_test, Y_test, num_epochs=10000):
+    """
+    Trains the model.
+
+    Args:
+        W: The weights of the model.
+        b: The biases of the model.
+        X_train: The training samples.
+        Y_train: The training labels.
+        X_test: The test samples.
+        Y_test: The test labels.
+        num_epochs: The number of epochs to train the model.
+
+    Returns:
+        W: The trained model weights.
+        b: The trained model biases.
+    """
     training_loss = np.zeros(num_epochs)
     testing_loss = np.zeros(num_epochs)
     correct_predictions = np.zeros(num_epochs)
@@ -197,12 +251,16 @@ def train_model(W, b, X_train, Y_train, X_test, Y_test, num_epochs=10000):
 
 def evaluate_model(W, b, X_test, Y_test):
     """
+    Measures how accurate the model is.
 
-    :param W:
-    :param b:
-    :param X_test:
-    :param y_test:
-    :return:
+    Args:
+        W: The weights of the model.
+        b: The biases of the model.
+        X_test: The test samples.
+        y_test: The test labels.
+
+    Returns:
+        num_correct (int): The number of correct predictions the model made.
     """
     Y_hat = forward_pass(W, b, X_test)
 
