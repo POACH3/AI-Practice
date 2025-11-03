@@ -1,15 +1,21 @@
 """
 matchbox.py
 
-Defines a structure to hold learned move probabilities in a
-generic statespace with discrete moves (like a chessboard).
+Implements a structure analogous to Donald Michie's MENACE (Machine Educable
+Noughts And Crosses Engine) matchboxes.
+It is used to hold learned move probabilities in a generic
+statespace with discrete moves (e.g. a chessboard).
+
+NOTES:
+    possibly extend functionality by creating a Bead class (do we need something more than a dictionary
+        to encapsulate the information held by a "bead"?)
 """
 
 import random
 
 class Matchbox:
     """
-    A structure to hold learned move probabilities.
+    Represents a MENACE matchbox. A structure to hold learned move probabilities.
     """
 
     def __init__(self, state, moves, initial_beads=3):
@@ -34,7 +40,7 @@ class Matchbox:
             return -1
 
 
-    def set_beads(self, move, change):
+    def _set_beads(self, move, change):
         """
         Sets the number of beads associated with a move. This increases or decreases
         the probability of the move being selected.
@@ -47,6 +53,14 @@ class Matchbox:
             self.beads[move] = max(1, self.beads[move] + change)
 
         # do some sort of error checking?
+
+
+    def reward(self, move):
+        self._set_beads(move, 1)
+
+
+    def punish(self, move):
+        self._set_beads(move, -1)
 
 
     def select_bead(self):
