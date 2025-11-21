@@ -15,12 +15,26 @@ import random
 
 class Matchbox:
     """
-    Represents a MENACE matchbox. A structure to hold learned move probabilities.
+    Represents a MENACE matchbox, a structure to hold learned move probabilities.
+    A matchbox is associated with a single game state and holds a probability distribution over all the
+    legal moves that can be reached from that state. This probability distribution over moves is represented by
+    a certain number of beads which are associated with each move.
     """
 
-    def __init__(self, state, moves, initial_beads=3):
+    def __init__(self, state, moves, beads):
+        """
+        Constructor.
+
+        Args:
+            state: The game state this matchbox represents.
+            moves (list): Moves legally reached from this game state.
+            beads (list): Number of beads associated with each move.
+        """
         self.state = state
-        self.beads = {move: initial_beads for move in moves}
+        self.moves = {} # dict of {move, num_beads}
+
+        for move, num_beads in zip(moves, beads):
+            self.moves[move] = num_beads
 
 
     def get_beads(self, move):
@@ -29,15 +43,12 @@ class Matchbox:
         the probability of that move being selected.
 
         Args:
-            move (string): A string representing the move.
+            move: The move.
 
         Returns:
             (int): The number of beads associated with the move.
         """
-        if move in self.beads:
-            return self.beads[move]
-        else:
-            return -1
+        return self.moves.get(move, -1)
 
 
     def _set_beads(self, move, change):
@@ -46,32 +57,44 @@ class Matchbox:
         the probability of the move being selected.
 
         Args:
-            move (string): A string representing the move.
+            move: The move associated with the number of beads.
             change (int): The number of beads to be added or removed.
         """
-        if move in self.beads:
-            self.beads[move] = max(1, self.beads[move] + change)
+        self.moves[move] = max(1, self.moves[move] + change)
 
         # do some sort of error checking?
 
 
     def reward(self, move):
+        """
+        Rewards a model for a good move.
+        Adds one bead to the matchbox representing that move.
+
+        Args:
+            move: The move to be rewarded.
+        """
         self._set_beads(move, 1)
 
 
     def punish(self, move):
+        """
+        Punishes a model for a bad move.
+        Unless there is only one bead left, removes one bead from the matchbox representing that move.
+
+        Args:
+            move: The move to be punished.
+        """
         self._set_beads(move, -1)
 
 
-    def select_bead(self):
+    def select_move(self):
         """
-        Chooses a random bead from the matchbox.
+        Draws a random bead from the matchbox to select a move.
 
         Returns:
-             move (string): A string representing the move.
+            move: The selected move.
         """
-        moves = list(self.beads.keys())
-        weights = list(self.beads.values())
-        move = random.choices(moves, weights=weights, k=1)[0]
+        moves = list(self.moves.keys())
+        weights = list(self.moves.values())
 
-        return move
+        return random.choices(moves, weights=weights, k=1)[0]
