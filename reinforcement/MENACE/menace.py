@@ -22,31 +22,32 @@ class Menace:
     Represents a MENACE agent that learns optimal moves through reinforcement.
     """
 
-    def __init__(self, player_position, game_name, states_and_moves=None, model_path=None):
+    def __init__(self, **kwargs):
         """
         Constructor.
 
         Args:
             player_position (int): The play order position (player number) of the MENACE agent.
-            game_name (string): The name of the game being played.
-            states_and_moves (dict): Maps game states to their legal moves. Optional if model already exists.
-            model_path (string): The path to the model (a .csv file). Optional if default model exists or states_and_moves is not None.
+            game_name (str): The name of the game being played.
+            states_and_moves (dict, optional): Maps game states to their legal moves. Optional if model already exists.
         """
-        self.game_type = game_name
-        self.model_path = model_path
-        self.player_position = player_position
+        self.player_position = kwargs['player_position']
+        self.game_name = kwargs['game_name']
+        self.states_and_moves = kwargs.get('states_and_moves') # optional
+        self.model_path = None                                 # optional alternative to default model
+
         self.matchboxes = {}
 
-        if self.model_path == None:
-            self.model_path = game_name + '_player' + str(player_position) + '_menace_model.csv' # load default model for that game
-            # add more game types here if necessary
+        if self.model_path is None:
+            self.model_path = f'{self.game_name}_player{str(self.player_position)}_menace_model.csv' # load default model for that game
 
-        if not os.path.exists(model_path):
-            raise FileNotFoundError('A model for this game was not found.') #FIXME - maybe instead initialize a new model
-            #self.initialize_model(game_name, states_and_moves, player_position)
-            #self.import_model(self.model_path)
+        if os.path.exists(self.model_path):
+            self.import_model(self.model_path)
+        elif self.states_and_moves is not None:
+            self.initialize_model(self.player_position, self.game_name, self.states_and_moves)
+            self.import_model(self.model_path)
         else:
-            self.import_model(model_path)
+            raise FileNotFoundError('A model for this game was not found.')
 
 
     def initialize_model(self, player_position, game_name, states_and_moves, initial_beads=3):
