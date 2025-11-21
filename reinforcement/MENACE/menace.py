@@ -9,11 +9,10 @@ each state are associated with a probability distribution that is updated over
 repeated iterations based on outcomes.
 
 NOTES:
-    consider json instead of a csv to hold the model
     board_states and moves should be generic and internally convert to string for saving
 """
 import os
-import csv
+import json
 from matchbox import Matchbox
 
 
@@ -27,35 +26,33 @@ class Menace:
         Constructor.
 
         Args:
-            player_position (int): The play order position (player number) of the MENACE agent.
-            game_name (str): The name of the game being played.
-            states_and_moves (dict, optional): Maps game states to their legal moves. Optional if model already exists.
+            **kwargs (dict): Expected keys:
+                - player_position (int): The play order position (player number) of the MENACE agent.
+                - game_name (str): The name of the game being played.
+                - states_and_moves (dict, optional): Maps game states to their legal moves. Optional if model already exists.
         """
-        self.player_position = kwargs['player_position']
+        self.player_position = kwargs.get('player_position')
         self.game_name = kwargs['game_name']
         self.states_and_moves = kwargs.get('states_and_moves') # optional
-        self.model_path = None                                 # optional alternative to default model
 
+        self.model_path = None                                 # optional alternative to default model
         self.matchboxes = {}
 
         if self.model_path is None:
-            self.model_path = f'{self.game_name}_player{str(self.player_position)}_menace_model.csv' # load default model for that game
+            self.model_path = f'{self.game_name}_player{self.player_position}_menace_model.json' # load default model for that game
 
         if os.path.exists(self.model_path):
             self.import_model(self.model_path)
         elif self.states_and_moves is not None:
-            self.initialize_model(self.player_position, self.game_name, self.states_and_moves)
+            self.create_model(self.player_position, self.game_name, self.states_and_moves)
             self.import_model(self.model_path)
         else:
             raise FileNotFoundError('A model for this game was not found.')
 
 
-    def initialize_model(self, player_position, game_name, states_and_moves, initial_beads=3):
+    def create_model(self, player_position, game_name, states_and_moves, initial_beads=3):
         """
-        Generates game states.
-        Then reads in the .csv file created.
-
-        that represents the states and beads and initializes all the matchboxes for the game.
+        Sets up matchboxes based on given game states and moves, then writes a JSON file.
 
         Args:
             player_position (int): The play order position (player number) of the MENACE agent.
@@ -63,34 +60,50 @@ class Menace:
             states_and_moves (dict): Maps game states to their legal moves.
             initial_beads (int): The number of initial beads to use for each move.
         """
-        pass
+        for state, moves in states_and_moves.items():
 
+            moves_and_beads = {}
+            for move in moves:
+                moves_and_beads[move] = initial_beads
+
+            matchbox = Matchbox(state, moves_and_beads)
+            self.matchboxes[state] = matchbox
+
+        self.model_path = f'{game_name}_player{player_position}_menace_model.json'
+
+        model = {}
+        for state, matchbox in self.matchboxes.items():
+            model[state] = matchbox.moves_and_beads
+
+        with open(self.model_path, 'w') as f:
+            json.dump(model, f, indent=4)
+
+
+    def import_model(self, model_file):
         """
-        self.model_path = game_name + '_player' + str(player_position) + 'menace_model.csv'
-
-        with open(self.model_path, 'w', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-
-            # write each board string as a row
-            for state_str in sorted(game_states):
-                writer.writerow([state_str, initial_beads])
-        """
-
-
-    def import_model(self, model_csv):
-        """
-        Reads in a .csv file that represents the states and beads and initializes
+        Reads in a JSON file that represents the states and beads and initializes
         all the matchboxes for the game.
 
         Args:
-            model_csv (string): Path to the .csv file.
+            model_file (string): Path to the JSON file.
         """
-        with open(model_csv, newline='') as csvfile:
-            reader = csv.reader(csvfile)
+        with open(model_file, 'r') as f:
+            model = json.load(f)
 
-            for row in reader:
-                matchbox = Matchbox(row[0], 3 if row[1] == None else row[1])
-                self.matchboxes[row[0]] = matchbox
+        for state, moves_and_beads in model.items():
+            self.matchboxes[state] = Matchbox(state, moves_and_beads)
+
+
+    def save_model(self):
+        """
+        Saves the model as JSON, writing over the original.
+        """
+        model = {}
+        for state, matchbox in self.matchboxes.items():
+            model[state] = matchbox.moves_and_beads
+
+        with open(self.model_path, 'w') as f:
+            json.dump(model, f, indent=4)
 
 
     def get_move(self, board_state):
@@ -105,7 +118,7 @@ class Menace:
         """
         matchbox = self.matchboxes.get(board_state)
 
-        if matchbox == None:
+        if matchbox is None:
             raise Exception(f'No matchbox found for board state: {board_state}')
 
         move = matchbox.select_bead()
@@ -141,14 +154,3 @@ class Menace:
         else:
             for state, move in game_history[player_idx::2]:
                 self.matchboxes[state].punish(move) # remove beads
-
-
-    def save_model(self):
-        """
-        Saves the model, writing over the original.
-        """
-        with open(self.model_path, "w", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-
-            for matchbox in self.matchboxes.keys():
-                writer.writerow([matchbox.state, matchbox.beads]) #FIXME - need to change so each row is state, move, beads, move, beads...
