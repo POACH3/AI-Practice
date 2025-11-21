@@ -21,20 +21,16 @@ class Matchbox:
     a certain number of beads which are associated with each move.
     """
 
-    def __init__(self, state, moves, beads):
+    def __init__(self, state, moves_and_beads):
         """
         Constructor.
 
         Args:
-            state: The game state this matchbox represents.
-            moves (list): Moves legally reached from this game state.
-            beads (list): Number of beads associated with each move.
+            state (str): The game state this matchbox represents.
+            moves_and_beads (dict): Maps moves legally reached from this game state to number of beads associated with that move.
         """
         self.state = state
-        self.moves = {} # dict of {move, num_beads}
-
-        for move, num_beads in zip(moves, beads):
-            self.moves[move] = num_beads
+        self.moves_and_beads = moves_and_beads
 
 
     def get_beads(self, move):
@@ -48,7 +44,7 @@ class Matchbox:
         Returns:
             (int): The number of beads associated with the move.
         """
-        return self.moves.get(move, -1)
+        return self.moves_and_beads.get(move, -1)
 
 
     def _set_beads(self, move, change):
@@ -60,7 +56,7 @@ class Matchbox:
             move: The move associated with the number of beads.
             change (int): The number of beads to be added or removed.
         """
-        self.moves[move] = max(1, self.moves[move] + change)
+        self.moves_and_beads[move] = max(1, self.moves_and_beads[move] + change)
 
         # do some sort of error checking?
 
@@ -94,7 +90,36 @@ class Matchbox:
         Returns:
             move: The selected move.
         """
-        moves = list(self.moves.keys())
-        weights = list(self.moves.values())
+        moves = list(self.moves_and_beads.keys())
+        weights = list(self.moves_and_beads.values())
 
         return random.choices(moves, weights=weights, k=1)[0]
+
+
+    def to_dict(self):
+        """
+        Converts the matchbox to a dictionary.
+
+        Returns:
+            d (dict): The dictionary representation of the matchbox.
+        """
+        d = {
+            'state': self.state,
+            'moves': self.moves_and_beads,
+        }
+
+        return d
+
+
+    @classmethod
+    def from_dict(cls, d):
+        """
+        Converts a dictionary representation of a matchbox to a matchbox.
+
+        Args:
+            d (dict): The dictionary representation of a matchbox.
+
+        Returns:
+            (Matchbox): A matchbox.
+        """
+        return cls(d['state'], d['moves_and_beads'])
