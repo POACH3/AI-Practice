@@ -9,7 +9,8 @@ each state are associated with a probability distribution that is updated over
 repeated iterations based on outcomes.
 
 NOTES:
-    none
+    fix save_model() so JSON is more readable.
+    consider passing the player_position every move instead of in a constructor (combine models?)
 """
 import os
 import json
