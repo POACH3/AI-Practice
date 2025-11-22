@@ -40,10 +40,11 @@ class Menace:
 
         if self.model_path is None:
             base_dir = os.path.dirname(os.path.abspath(__file__))  # this directory
-            self.model_path = os.path.join(base_dir, f'{self.game_name}_player{self.player_position}_menace_model.json') # load default model for that game
+            self.model_path = os.path.join(base_dir, f'models/{self.game_name}_player{self.player_position}_menace_model.json') # load default model for that game
 
         if os.path.exists(self.model_path):
             self.import_model(self.model_path)
+            #FIXME - if there is an error in importing, create a new model
         elif self.states_and_moves is not None:
             self.create_model(self.player_position, self.game_name, self.states_and_moves)
             self.import_model(self.model_path)
@@ -71,7 +72,7 @@ class Menace:
             self.matchboxes[state] = matchbox
 
         base_dir = os.path.dirname(os.path.abspath(__file__))  # this directory
-        self.model_path = os.path.join(base_dir, f'{game_name}_player{player_position}_menace_model.json')
+        self.model_path = os.path.join(base_dir, f'models/{game_name}_player{player_position}_menace_model.json')
         self.save_model()
 
 
