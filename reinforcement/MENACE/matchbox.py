@@ -51,14 +51,17 @@ class Matchbox:
         """
         Sets the number of beads associated with a move. This increases or decreases
         the probability of the move being selected.
+        The number of beads associated with the move is clamped to ensure that there
+        remains a probability distribution.
 
         Args:
             move: The move associated with the number of beads.
             change (int): The number of beads to be added or removed.
         """
-        self.moves_and_beads[move] = max(1, self.moves_and_beads[move] + change)
+        min_beads = 1
+        max_beads = 15
 
-        # do some sort of error checking?
+        self.moves_and_beads[move] = min(max(min_beads, self.moves_and_beads[move] + change), max_beads)
 
 
     def reward(self, move):
@@ -83,7 +86,7 @@ class Matchbox:
         self._set_beads(move, -1)
 
 
-    def select_move(self):
+    def draw_bead(self):
         """
         Draws a random bead from the matchbox to select a move.
 
