@@ -1,4 +1,4 @@
-# AI Practice
+# AI Projects
 
 This repository catalogs artificial intelligence projects, created to help me learn the implementation, behavior, and real-world applications of different models through hands-on experience.
 
